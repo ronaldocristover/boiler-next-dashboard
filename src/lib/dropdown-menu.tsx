@@ -1,5 +1,13 @@
 "use client";
 
+import Link from "next/link";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 interface DropdownItem {
@@ -16,58 +24,42 @@ interface DropdownMenuProps {
 
 export function DropdownMenu({ item, className = "" }: DropdownMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
-
-    const toggleOpen = () => setIsOpen(!isOpen);
-
     const hasChildren = item.children && item.children.length > 0;
 
     if (!hasChildren && item.href) {
         return (
-            <a
-                href={item.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded hover:bg-sidebar-accent transition-colors ${className}`}
-            >
-                {item.icon}
-                <span>{item.label}</span>
-            </a>
+            <Button asChild variant="ghost" className={`w-full justify-start gap-2 ${className}`}>
+                <Link href={item.href}>
+                    {item.icon}
+                    <span>{item.label}</span>
+                </Link>
+            </Button>
         );
     }
 
     return (
-        <div className={className}>
-            <button
-                onClick={toggleOpen}
-                className="flex items-center justify-between w-full px-3 py-2 rounded hover:bg-sidebar-accent transition-colors"
-            >
-                <div className="flex items-center gap-2">
-                    {item.icon}
-                    <span>{item.label}</span>
-                </div>
-                {hasChildren && (
-                    <svg
-                        className={`h-4 w-4 transition-transform duration-200 ${
-                            isOpen ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
+            <CollapsibleTrigger asChild>
+                <Button
+                    variant="ghost"
+                    className="flex items-center justify-between w-full gap-2"
+                >
+                    <div className="flex items-center gap-2">
+                        {item.icon}
+                        <span>{item.label}</span>
+                    </div>
+                    {hasChildren && (
+                        <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-200 ${
+                                isOpen ? "rotate-180" : ""
+                            }`}
                         />
-                    </svg>
-                )}
-            </button>
+                    )}
+                </Button>
+            </CollapsibleTrigger>
 
             {hasChildren && (
-                <div
-                    className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                        isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-                    }`}
-                >
+                <CollapsibleContent className="overflow-hidden">
                     <div className="ml-4 mt-1 space-y-1">
                         {item.children?.map((child, index) => (
                             <DropdownMenu
@@ -77,9 +69,9 @@ export function DropdownMenu({ item, className = "" }: DropdownMenuProps) {
                             />
                         ))}
                     </div>
-                </div>
+                </CollapsibleContent>
             )}
-        </div>
+        </Collapsible>
     );
 }
 

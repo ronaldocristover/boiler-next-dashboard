@@ -1,6 +1,27 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Toggle } from "@/components/ui/toggle";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Bold,
+    Italic,
+    Underline,
+    Strikethrough,
+    AlignLeft,
+    AlignCenter,
+    AlignRight,
+    List,
+    ListOrdered,
+    Link2,
+    RotateCcw
+} from "lucide-react";
 
 interface WysiwygEditorProps {
     value: string;
@@ -10,233 +31,272 @@ interface WysiwygEditorProps {
 }
 
 export function WysiwygEditor({ value, onChange, placeholder = "Start typing...", className = "" }: WysiwygEditorProps) {
-    const editorRef = useRef<HTMLDivElement>(null);
-    const [isInitialized, setIsInitialized] = useState(false);
+    const [formattingOptions, setFormattingOptions] = useState({
+        bold: false,
+        italic: false,
+        underline: false,
+        strikethrough: false,
+        alignment: "left",
+        fontSize: "14",
+        textColor: "#000000",
+        backgroundColor: "#ffffff"
+    });
+    const [linkUrl, setLinkUrl] = useState("");
+    const [showLinkPopover, setShowLinkPopover] = useState(false);
 
-    useEffect(() => {
-        if (editorRef.current && !isInitialized) {
-            editorRef.current.innerHTML = value;
-            setIsInitialized(true);
-        }
-    }, [value, isInitialized]);
-
-    const handleInput = () => {
-        if (editorRef.current) {
-            onChange(editorRef.current.innerHTML);
-        }
+    const handleFormatToggle = (format: string, isActive: boolean) => {
+        setFormattingOptions(prev => ({
+            ...prev,
+            [format]: isActive
+        }));
     };
 
-    const execCommand = (command: string, value?: string) => {
-        document.execCommand(command, false, value);
-        editorRef.current?.focus();
-        handleInput();
-    };
+    const formatText = (formatType: string, formatValue?: string) => {
+        const textarea = document.getElementById('rich-textarea') as HTMLTextAreaElement;
+        if (!textarea) return;
 
-    const isActive = (command: string) => {
-        return document.queryCommandState(command);
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+
+        let formattedText = selectedText;
+
+        switch (formatType) {
+            case 'bold':
+                formattedText = `**${selectedText}**`;
+                break;
+            case 'italic':
+                formattedText = `*${selectedText}*`;
+                break;
+            case 'underline':
+                formattedText = `<u>${selectedText}</u>`;
+                break;
+            case 'strikethrough':
+                formattedText = `~~${selectedText}~~`;
+                break;
+            case 'link':
+                formattedText = `[${selectedText || 'Link Text'}](${formatValue || linkUrl})`;
+                break;
+            case 'list':
+                formattedText = `\n- ${selectedText}`;
+                break;
+            case 'orderedList':
+                formattedText = `\n1. ${selectedText}`;
+                break;
+            case 'clear':
+                formattedText = selectedText.replace(/(\*\*|__|\*|_|~~|<u>|<\/u>)/g, '');
+                break;
+        }
+
+        const newValue = value.substring(0, start) + formattedText + value.substring(end);
+        onChange(newValue);
+
+        // Restore focus and selection
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start, start + formattedText.length);
+        }, 0);
     };
 
     const insertLink = () => {
-        const url = prompt("Enter URL:");
-        if (url) {
-            execCommand("createLink", url);
+        if (linkUrl) {
+            formatText('link', linkUrl);
+            setLinkUrl("");
+            setShowLinkPopover(false);
         }
-    };
-
-    const changeFontSize = (size: string) => {
-        execCommand("fontSize", size);
-    };
-
-    const changeTextColor = (color: string) => {
-        execCommand("foreColor", color);
-    };
-
-    const changeBackgroundColor = (color: string) => {
-        execCommand("backColor", color);
     };
 
     return (
         <div className={`border rounded-md bg-background ${className}`}>
             {/* Toolbar */}
-            <div className="border-b p-2 flex flex-wrap gap-1">
+            <div className="border-b p-2 flex flex-wrap gap-1 items-center">
                 {/* Text Formatting */}
-                <div className="flex gap-1 border-r pr-2 mr-2">
-                    <button
-                        type="button"
-                        onClick={() => execCommand("bold")}
-                        className={`p-2 rounded hover:bg-accent transition-colors ${isActive("bold") ? "bg-accent" : ""}`}
-                        title="Bold"
+                <div className="flex gap-1 items-center">
+                    <Toggle
+                        pressed={formattingOptions.bold}
+                        onPressedChange={(pressed) => {
+                            handleFormatToggle('bold', pressed);
+                            if (pressed) formatText('bold');
+                        }}
+                        size="sm"
+                        aria-label="Bold"
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4h8a4 4 0 014 4 4 4 0 01-4 4H6z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12h9a4 4 0 014 4 4 4 0 01-4 4H6z" />
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => execCommand("italic")}
-                        className={`p-2 rounded hover:bg-accent transition-colors ${isActive("italic") ? "bg-accent" : ""}`}
-                        title="Italic"
+                        <Bold className="h-4 w-4" />
+                    </Toggle>
+                    <Toggle
+                        pressed={formattingOptions.italic}
+                        onPressedChange={(pressed) => {
+                            handleFormatToggle('italic', pressed);
+                            if (pressed) formatText('italic');
+                        }}
+                        size="sm"
+                        aria-label="Italic"
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 4h-9M14 20H5m8-16l-3 12" />
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => execCommand("underline")}
-                        className={`p-2 rounded hover:bg-accent transition-colors ${isActive("underline") ? "bg-accent" : ""}`}
-                        title="Underline"
+                        <Italic className="h-4 w-4" />
+                    </Toggle>
+                    <Toggle
+                        pressed={formattingOptions.underline}
+                        onPressedChange={(pressed) => {
+                            handleFormatToggle('underline', pressed);
+                            if (pressed) formatText('underline');
+                        }}
+                        size="sm"
+                        aria-label="Underline"
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0a4 4 0 01-4-4V4h8v12a4 4 0 01-4 4zM4 20h16" />
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => execCommand("strikethrough")}
-                        className={`p-2 rounded hover:bg-accent transition-colors ${isActive("strikethrough") ? "bg-accent" : ""}`}
-                        title="Strikethrough"
+                        <Underline className="h-4 w-4" />
+                    </Toggle>
+                    <Toggle
+                        pressed={formattingOptions.strikethrough}
+                        onPressedChange={(pressed) => {
+                            handleFormatToggle('strikethrough', pressed);
+                            if (pressed) formatText('strikethrough');
+                        }}
+                        size="sm"
+                        aria-label="Strikethrough"
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2v4m0 0v4m0-4h8m-8 0H4" />
-                        </svg>
-                    </button>
+                        <Strikethrough className="h-4 w-4" />
+                    </Toggle>
                 </div>
+
+                <Separator orientation="vertical" className="h-6" />
 
                 {/* Alignment */}
-                <div className="flex gap-1 border-r pr-2 mr-2">
-                    <button
-                        type="button"
-                        onClick={() => execCommand("justifyLeft")}
-                        className="p-2 rounded hover:bg-accent transition-colors"
-                        title="Align Left"
+                <div className="flex gap-1">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormattingOptions(prev => ({ ...prev, alignment: 'left' }))}
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18M3 12h12M3 18h18" />
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => execCommand("justifyCenter")}
-                        className="p-2 rounded hover:bg-accent transition-colors"
-                        title="Align Center"
+                        <AlignLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormattingOptions(prev => ({ ...prev, alignment: 'center' }))}
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18M3 12h18M3 18h18" />
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => execCommand("justifyRight")}
-                        className="p-2 rounded hover:bg-accent transition-colors"
-                        title="Align Right"
+                        <AlignCenter className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormattingOptions(prev => ({ ...prev, alignment: 'right' }))}
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18M9 12h12M3 18h18" />
-                        </svg>
-                    </button>
+                        <AlignRight className="h-4 w-4" />
+                    </Button>
                 </div>
+
+                <Separator orientation="vertical" className="h-6" />
 
                 {/* Lists */}
-                <div className="flex gap-1 border-r pr-2 mr-2">
-                    <button
-                        type="button"
-                        onClick={() => execCommand("insertUnorderedList")}
-                        className="p-2 rounded hover:bg-accent transition-colors"
-                        title="Bullet List"
+                <div className="flex gap-1">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => formatText('list')}
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => execCommand("insertOrderedList")}
-                        className="p-2 rounded hover:bg-accent transition-colors"
-                        title="Numbered List"
+                        <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => formatText('orderedList')}
                     >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9l1 1-1 1H3m0 6h13m-10-3L4 15l2 2" />
-                        </svg>
-                    </button>
+                        <ListOrdered className="h-4 w-4" />
+                    </Button>
                 </div>
+
+                <Separator orientation="vertical" className="h-6" />
 
                 {/* Font Size */}
-                <div className="flex gap-1 border-r pr-2 mr-2">
-                    <select
-                        onChange={(e) => changeFontSize(e.target.value)}
-                        className="px-2 py-1 border rounded text-sm bg-background"
-                        title="Font Size"
-                    >
-                        <option value="1">8pt</option>
-                        <option value="2">10pt</option>
-                        <option value="3" selected>12pt</option>
-                        <option value="4">14pt</option>
-                        <option value="5">18pt</option>
-                        <option value="6">24pt</option>
-                        <option value="7">36pt</option>
-                    </select>
-                </div>
+                <Select
+                    value={formattingOptions.fontSize}
+                    onValueChange={(value) => setFormattingOptions(prev => ({ ...prev, fontSize: value }))}
+                >
+                    <SelectTrigger className="w-20 h-8">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="12">12px</SelectItem>
+                        <SelectItem value="14">14px</SelectItem>
+                        <SelectItem value="16">16px</SelectItem>
+                        <SelectItem value="18">18px</SelectItem>
+                        <SelectItem value="20">20px</SelectItem>
+                        <SelectItem value="24">24px</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Separator orientation="vertical" className="h-6" />
 
                 {/* Colors */}
-                <div className="flex gap-1 border-r pr-2 mr-2">
+                <div className="flex gap-1">
                     <input
                         type="color"
-                        onChange={(e) => changeTextColor(e.target.value)}
+                        value={formattingOptions.textColor}
+                        onChange={(e) => setFormattingOptions(prev => ({ ...prev, textColor: e.target.value }))}
                         className="w-8 h-8 border rounded cursor-pointer"
                         title="Text Color"
                     />
                     <input
                         type="color"
-                        onChange={(e) => changeBackgroundColor(e.target.value)}
+                        value={formattingOptions.backgroundColor}
+                        onChange={(e) => setFormattingOptions(prev => ({ ...prev, backgroundColor: e.target.value }))}
                         className="w-8 h-8 border rounded cursor-pointer"
                         title="Background Color"
                     />
                 </div>
 
-                {/* Links and Actions */}
-                <div className="flex gap-1">
-                    <button
-                        type="button"
-                        onClick={insertLink}
-                        className="p-2 rounded hover:bg-accent transition-colors"
-                        title="Insert Link"
-                    >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => execCommand("removeFormat")}
-                        className="p-2 rounded hover:bg-accent transition-colors"
-                        title="Clear Formatting"
-                    >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+                <Separator orientation="vertical" className="h-6" />
+
+                {/* Link */}
+                <Popover open={showLinkPopover} onOpenChange={setShowLinkPopover}>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                            <Link2 className="h-4 w-4" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                        <div className="space-y-2">
+                            <Label htmlFor="link-url">Link URL</Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    id="link-url"
+                                    value={linkUrl}
+                                    onChange={(e) => setLinkUrl(e.target.value)}
+                                    placeholder="https://example.com"
+                                />
+                                <Button onClick={insertLink} size="sm">
+                                    Insert
+                                </Button>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
+                {/* Clear Formatting */}
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => formatText('clear')}
+                    title="Clear Formatting"
+                >
+                    <RotateCcw className="h-4 w-4" />
+                </Button>
             </div>
 
             {/* Editor */}
-            <div
-                ref={editorRef}
-                contentEditable
-                onInput={handleInput}
-                className="min-h-[200px] p-4 focus:outline-none"
-                style={{ minHeight: "200px" }}
-                data-placeholder={placeholder}
+            <Textarea
+                id="rich-textarea"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder}
+                className="min-h-[200px] border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                style={{
+                    fontSize: `${formattingOptions.fontSize}px`,
+                    textAlign: formattingOptions.alignment as "left" | "center" | "right",
+                    color: formattingOptions.textColor,
+                    backgroundColor: formattingOptions.backgroundColor,
+                }}
             />
-
-            <style jsx>{`
-                [contenteditable]:empty:before {
-                    content: attr(data-placeholder);
-                    color: #9ca3af;
-                    font-style: italic;
-                }
-            `}</style>
         </div>
     );
 }

@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { DateRangePicker } from "@/lib/date-range-picker";
-import { WysiwygEditor } from "@/lib/wysiwyg-editor";
+import { LazyDateRangePicker } from "@/components/lazy/lazy-date-range-picker";
+import { LazyWysiwyg } from "@/components/lazy/lazy-wysiwyg";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function SampleFormsPage() {
   const [formData, setFormData] = useState({
@@ -84,104 +88,103 @@ export default function SampleFormsPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Text Inputs Section */}
-        <div className="rounded-lg border bg-card text-card-foreground p-6">
-          <h2 className="text-base font-semibold mb-4">Text Inputs</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Text Inputs</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium mb-2">
+                <Label htmlFor="firstName">
                   First Name
-                </label>
-                <input
-                  type="text"
+                </Label>
+                <Input
                   id="firstName"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                   placeholder="Enter your first name"
                 />
               </div>
 
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium mb-2">
+                <Label htmlFor="lastName">
                   Last Name
-                </label>
-                <input
-                  type="text"
+                </Label>
+                <Input
                   id="lastName"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                   placeholder="Enter your last name"
                 />
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-2">
+                <Label htmlFor="email">
                   Email
-                </label>
-                <input
-                  type="email"
+                </Label>
+                <Input
                   id="email"
                   name="email"
+                  type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                   placeholder="Enter your email"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium mb-2">
+                <Label htmlFor="password">
                   Password
-                </label>
-                <input
-                  type="password"
+                </Label>
+                <Input
                   id="password"
                   name="password"
+                  type="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                   placeholder="Enter your password"
                 />
               </div>
 
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                <Label htmlFor="phone">
                   Phone Number
-                </label>
-                <input
-                  type="tel"
+                </Label>
+                <Input
                   id="phone"
                   name="phone"
+                  type="tel"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                   placeholder="Enter your phone number"
                 />
               </div>
 
               <div>
-                <label htmlFor="website" className="block text-sm font-medium mb-2">
+                <Label htmlFor="website">
                   Website URL
-                </label>
-                <input
-                  type="url"
+                </Label>
+                <Input
                   id="website"
                   name="website"
+                  type="url"
                   value={formData.website}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                   placeholder="https://example.com"
                 />
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
         {/* Selection Inputs Section */}
-        <div className="rounded-lg border bg-card text-card-foreground p-6">
-          <h2 className="text-base font-semibold mb-4">Selection Inputs</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Selection Inputs</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label htmlFor="country" className="block text-sm font-medium mb-2">
@@ -282,7 +285,8 @@ export default function SampleFormsPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
         {/* Checkboxes and Toggles Section */}
         <div className="rounded-lg border bg-card text-card-foreground p-6">
@@ -499,7 +503,7 @@ export default function SampleFormsPage() {
               <label className="block text-sm font-medium mb-2">
                 Date Range
               </label>
-              <DateRangePicker
+              <LazyDateRangePicker
                 value={formData.dateRange}
                 onChange={handleDateRangeChange}
               />
@@ -514,7 +518,7 @@ export default function SampleFormsPage() {
             <label className="block text-sm font-medium mb-2">
               Rich Text Content
             </label>
-            <WysiwygEditor
+            <LazyWysiwyg
               value={formData.richTextContent}
               onChange={handleRichTextChange}
               placeholder="Start typing your rich text content here..."

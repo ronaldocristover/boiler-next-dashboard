@@ -1,6 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface DateRange {
     startDate: string;
@@ -17,14 +28,10 @@ export function DateRangePicker({ value, onChange, className = "" }: DateRangePi
     const [isOpen, setIsOpen] = useState(false);
     const [tempRange, setTempRange] = useState(value);
 
-    const formatDate = (dateString: string) => {
+    const formatDisplayDate = (dateString: string) => {
         if (!dateString) return "";
         const date = new Date(dateString);
-        return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric"
-        });
+        return format(date, "MMM dd, yyyy");
     };
 
     const handleApply = () => {
@@ -39,9 +46,9 @@ export function DateRangePicker({ value, onChange, className = "" }: DateRangePi
 
     const getDisplayText = () => {
         if (value.startDate && value.endDate) {
-            return `${formatDate(value.startDate)} - ${formatDate(value.endDate)}`;
+            return `${formatDisplayDate(value.startDate)} - ${formatDisplayDate(value.endDate)}`;
         } else if (value.startDate) {
-            return `${formatDate(value.startDate)} - Select end date`;
+            return `${formatDisplayDate(value.startDate)} - Select end date`;
         }
         return "Select date range";
     };
@@ -100,22 +107,21 @@ export function DateRangePicker({ value, onChange, className = "" }: DateRangePi
     };
 
     return (
-        <div className={`relative ${className}`}>
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-left flex items-center justify-between"
-            >
-                <span className={value.startDate ? "" : "text-muted-foreground"}>
-                    {getDisplayText()}
-                </span>
-                <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-            </button>
-
-            {isOpen && (
-                <div className="absolute top-full left-0 mt-1 w-full min-w-[400px] bg-popover border rounded-md shadow-lg z-50">
+        <div className={className}>
+            <Popover open={isOpen} onOpenChange={setIsOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !value.startDate && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {getDisplayText()}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
                     <div className="p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Quick Ranges */}
@@ -123,14 +129,15 @@ export function DateRangePicker({ value, onChange, className = "" }: DateRangePi
                                 <h3 className="text-sm font-medium mb-3">Quick Ranges</h3>
                                 <div className="space-y-1">
                                     {getQuickRanges().map((quickRange, index) => (
-                                        <button
+                                        <Button
                                             key={index}
-                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={() => setTempRange(quickRange.range)}
-                                            className="w-full text-left px-3 py-2 text-sm rounded hover:bg-accent transition-colors"
+                                            className="w-full justify-start text-sm"
                                         >
                                             {quickRange.label}
-                                        </button>
+                                        </Button>
                                     ))}
                                 </div>
                             </div>
@@ -139,23 +146,25 @@ export function DateRangePicker({ value, onChange, className = "" }: DateRangePi
                             <div>
                                 <h3 className="text-sm font-medium mb-3">Custom Range</h3>
                                 <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-xs font-medium mb-1">Start Date</label>
-                                        <input
+                                    <div className="space-y-2">
+                                        <Label htmlFor="startDate" className="text-xs">Start Date</Label>
+                                        <Input
+                                            id="startDate"
                                             type="date"
                                             value={tempRange.startDate}
                                             onChange={(e) => setTempRange(prev => ({ ...prev, startDate: e.target.value }))}
-                                            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-sm"
+                                            className="text-sm"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-medium mb-1">End Date</label>
-                                        <input
+                                    <div className="space-y-2">
+                                        <Label htmlFor="endDate" className="text-xs">End Date</Label>
+                                        <Input
+                                            id="endDate"
                                             type="date"
                                             value={tempRange.endDate}
                                             onChange={(e) => setTempRange(prev => ({ ...prev, endDate: e.target.value }))}
                                             min={tempRange.startDate}
-                                            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-sm"
+                                            className="text-sm"
                                         />
                                     </div>
                                 </div>
@@ -164,24 +173,23 @@ export function DateRangePicker({ value, onChange, className = "" }: DateRangePi
 
                         {/* Actions */}
                         <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-                            <button
-                                type="button"
+                            <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={handleCancel}
-                                className="px-3 py-1 text-sm border rounded hover:bg-accent transition-colors"
                             >
                                 Cancel
-                            </button>
-                            <button
-                                type="button"
+                            </Button>
+                            <Button
+                                size="sm"
                                 onClick={handleApply}
-                                className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
                             >
                                 Apply
-                            </button>
+                            </Button>
                         </div>
                     </div>
-                </div>
-            )}
+                </PopoverContent>
+            </Popover>
         </div>
     );
 }
